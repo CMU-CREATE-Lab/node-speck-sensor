@@ -1,0 +1,1 @@
+These tests won't pass unless you actually have a Speck plugged in!

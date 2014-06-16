@@ -1,0 +1,43 @@
+{
+  "name": "speck-sensor",
+  "version": "0.1.0",
+  "description": "Node.js interface for the CMU CREATE Lab Speck particle sensor",
+  "main": "index.js",
+  "scripts": {
+    "test": "./node_modules/.bin/mocha --reporter spec",
+    "api-docs": "./node_modules/.bin/jsdoc index.js"
+  },
+  "keywords": [
+    "speck",
+    "sensor",
+    "particle",
+    "particles",
+    "pm2.5",
+    "createlab",
+    "cmucreatelab"
+  ],
+  "author": "Chris Bartley <bartley@cmu.edu>",
+  "license": "GPL-2.0",
+  "dependencies": {
+    "byte": "^0.3.1",
+    "debug": "^1.0.2",
+    "jsdoc": "^3.3.0-alpha5",
+    "node-hid": "^0.3.1"
+  },
+  "devDependencies": {
+    "chai": "^1.9.1",
+    "jsdoc": "^3.3.0-alpha5",
+    "mocha": "^1.20.1"
+  },
+  "directories": {
+    "test": "test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/CMU-CREATE-Lab/node-speck-sensor.git"
+  },
+  "bugs": {
+    "url": "https://github.com/CMU-CREATE-Lab/node-speck-sensor/issues"
+  },
+  "homepage": "https://github.com/CMU-CREATE-Lab/node-speck-sensor"
+}
