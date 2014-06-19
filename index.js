@@ -5,9 +5,7 @@ var debug = require('debug')('debug');
 
 var SPECK_HID = {
    "vendorId" : 0x2354,
-   "productId" : 0x3333,
-   "manufacturer" : "CREATE Lab",
-   "product" : "Speck"
+   "productId" : 0x3333
 };
 
 //======================================================================================================================
