@@ -1,0 +1,1 @@
+Linux/Raspberry Pi folks should put this "55-speck.rules" file in "/etc/udev/rules.d/" and then reboot.
