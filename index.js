@@ -166,9 +166,9 @@ function Speck(hidDeviceDescriptor) {
 
    /**
     * <p>
-    * Returns various properties about the currently-connected Speck to the given callback function.  These values are
-    * read once then cached for future use.  The version returned here is a copy of the cached version, so modifications
-    * won't have any effect on the cached version.
+    *    Returns various properties about the currently-connected Speck to the given callback function.  These values
+    *    are read once then cached for future use.  The version returned here is a copy of the cached version, so
+    *    modifications won't have any effect on the cached version.
     * </p>
     * <p>
     *    The returned data object contains the following fields:
@@ -348,8 +348,8 @@ function Speck(hidDeviceDescriptor) {
 
    /**
     * <p>
-    * Reads the current sample from the Speck and returns the it to the given <code>callback</code>.  The callback
-    * function has a signature of the form <code>callback(err, data)</code>.
+    *    Reads the current sample from the Speck and returns the it to the given <code>callback</code>.  The callback
+    *    function has a signature of the form <code>callback(err, data)</code>.
     * </p>
     * <p>
     *    For The data object contains the following fields:
@@ -371,8 +371,8 @@ function Speck(hidDeviceDescriptor) {
 
    /**
     * <p>
-    * Reads the historical sample from the Speck and returns the it to the given <code>callback</code>.  The callback
-    * function has a signature of the form <code>callback(err, data)</code>.
+    *    Reads the historical sample from the Speck and returns the it to the given <code>callback</code>.  The callback
+    *    function has a signature of the form <code>callback(err, data)</code>.
     * </p>
     * <p>
     *    The data object contains the following fields:
@@ -384,6 +384,9 @@ function Speck(hidDeviceDescriptor) {
     *       <li><code>rawParticleCount</code>: integer</li>
     *       <li><code>temperature</code>: integer (only included in Specks supporting protocol version 1)</li>
     *    </ul>
+    * </p>
+    * <p>
+    *    The error and data objects will both be <code>null</code> if no historical data is available.
     * </p>
     *
     * @param callback {function} - the callback function with a signature of the form <code>callback(err, data)</code>
@@ -408,25 +411,34 @@ function Speck(hidDeviceDescriptor) {
                      humidity : data.readUInt8(HUMIDITY_BYTE_INDEX),
                      rawParticleCount : data.readUInt16BE(RAW_PARTICLE_COUNT_BYTE_INDEX)
                   };
-                  // temperature was only included in protocol version 1
-                  if (self.getApiSupport().hasTemperatureSensor()) {
-                     obj['temperature'] = data.readUInt16BE(TEMPERATURE_BYTE_INDEX);
+
+                  // see whether any data was actually returned
+                  var isNoDataAvailable = obj.sampleTimeSecs == 0 &&
+                                          obj.rawParticleCount == 0 &&
+                                          obj.humidity == 0;
+
+                  if (!isNoDataAvailable) {
+                     // temperature was only included in protocol version 1
+                     if (self.getApiSupport().hasTemperatureSensor()) {
+                        obj['temperature'] = data.readUInt16BE(TEMPERATURE_BYTE_INDEX);
+                     }
+
+                     // add the particleCount or particleConcentration field, depending on the protocol version.
+                     var particleCountOrConcentration = data.readUInt32BE(PARTICLE_COUNT_OR_CONCENTRATION_BYTE_INDEX);
+                     if (self.getApiSupport().hasParticleCount()) {
+                        obj['particleCount'] = particleCountOrConcentration;
+                     }
+                     else {
+                        obj['particleConcentration'] = particleCountOrConcentration / 10.0;
+                     }
                   }
 
-                  // add the particleCount or particleConcentration field, depending on the protocol version.
-                  var particleCountOrConcentration = data.readUInt32BE(PARTICLE_COUNT_OR_CONCENTRATION_BYTE_INDEX);
-                  if (self.getApiSupport().hasParticleCount()) {
-                     obj['particleCount'] = particleCountOrConcentration;
-                  }
-                  else {
-                     obj['particleConcentration'] = particleCountOrConcentration / 10.0;
-                  }
-
-                  callback(null, obj);
+                  // return null if no data is available
+                  callback(null, isNoDataAvailable ? null : obj);
                }
                else {
                   error("getDataSample(): no data in the response!");
-                  callback(null, null);
+                  callback(new Error("No data in the response"), null);
                }
             }
          });
