@@ -1,0 +1,9 @@
+{
+   "appenders" : [
+      {
+         "type" : "console",
+         "level" : "DEBUG",
+         "category" : "speck-sensor"
+      }
+   ]
+}

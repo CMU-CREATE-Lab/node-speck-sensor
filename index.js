@@ -1,7 +1,8 @@
 var HID = require('node-hid');
 var ByteBuffer = require('byte');
-var error = require('debug')('error');
-var debug = require('debug')('debug');
+var log4js = require('log4js');
+log4js.configure('log4js-config.json');
+var log = log4js.getLogger("speck-sensor");
 
 var SPECK_HID = {
    "vendorId" : 0x2354,
@@ -118,13 +119,13 @@ function Speck(hidDeviceDescriptor) {
             // call getSpeckConfig here just so it's cached for future use
             this.getSpeckConfig(function(err, config) {
                if (err) {
-                  error("connect(): Failed to get speck config after successful connection!");
+                  log.error("connect(): Failed to get speck config after successful connection!");
                   throw err;
                }
             })
          }
          catch (e) {
-            error("connect(): connection failed: " + e);
+            log.error("connect(): connection failed: " + e);
             speck = null;
          }
       }
@@ -145,7 +146,7 @@ function Speck(hidDeviceDescriptor) {
             speck.close();
          }
          catch (e) {
-            error("disconnect(): exception while closing connection with the Speck: " + e);
+            log.error("disconnect(): exception while closing connection with the Speck: " + e);
          }
          finally {
             speck = null;
@@ -183,11 +184,11 @@ function Speck(hidDeviceDescriptor) {
     */
    this.getSpeckConfig = function(callback) {
       if (speckConfig) {
-         debug("getSpeckConfig(): returning copy of cached version");
+         log.debug("getSpeckConfig(): returning copy of cached version");
          return callback(null, simpleObjectCopy(speckConfig));
       }
       else {
-         debug("getSpeckConfig(): querying hardware for speck config");
+         log.debug("getSpeckConfig(): querying hardware for speck config");
          getBasicSpeckConfig(function(err, config) {
             if (err) {
                return callback(err, null);
@@ -199,15 +200,15 @@ function Speck(hidDeviceDescriptor) {
                return callback(null, simpleObjectCopy(speckConfig));
             }
 
-            debug("getSpeckConfig(): need to get extended Speck config");
+            log.debug("getSpeckConfig(): need to get extended Speck config");
             getExtendedSpeckConfig(function(err2, extendedConfig) {
                if (err2) {
                   return callback(err2, null);
                }
 
-               debug("getSpeckConfig(): id was [" + speckConfig.id + "]");
+               log.debug("getSpeckConfig(): id was [" + speckConfig.id + "]");
                speckConfig.id = speckConfig.id + extendedConfig.id;
-               debug("getSpeckConfig(): id is now [" + speckConfig.id + "]");
+               log.debug("getSpeckConfig(): id is now [" + speckConfig.id + "]");
 
                callback(null, simpleObjectCopy(speckConfig));
             });
@@ -220,7 +221,7 @@ function Speck(hidDeviceDescriptor) {
          var command = createCommand(GET_INFO_COMMAND_CHARACTER);
          enqueueCommand(command, function(err, data) {
             if (err) {
-               error("getSpeckConfig(): failed to get Speck config: " + err);
+               log.error("getSpeckConfig(): failed to get Speck config: " + err);
                callback(err, null);
             }
             else {
@@ -266,7 +267,7 @@ function Speck(hidDeviceDescriptor) {
                   callback(null, obj);
                }
                else {
-                  error("getSpeckConfig(): no data in the response!");
+                  log.error("getSpeckConfig(): no data in the response!");
                   callback(null, null);
                }
             }
@@ -282,7 +283,7 @@ function Speck(hidDeviceDescriptor) {
          var command = createCommand(GET_EXTENDED_INFO_COMMAND_CHARACTER);
          enqueueCommand(command, function(err, data) {
             if (err) {
-               error("getExtendedSpeckConfig(): failed to get extended Speck config: " + err);
+               log.error("getExtendedSpeckConfig(): failed to get extended Speck config: " + err);
                callback(err, null);
             }
             else {
@@ -301,7 +302,7 @@ function Speck(hidDeviceDescriptor) {
                   callback(null, {id : serialNumberSuffix});
                }
                else {
-                  error("getExtendedSpeckConfig(): no data in the response!");
+                  log.error("getExtendedSpeckConfig(): no data in the response!");
                   callback(null, null);
                }
             }
@@ -398,7 +399,7 @@ function Speck(hidDeviceDescriptor) {
          var command = createCommand(commandCharacter);
          enqueueCommand(command, function(err, data) {
             if (err) {
-               error("getDataSample(): failed to get data sample: " + err);
+               log.error("getDataSample(): failed to get data sample: " + err);
                callback(err, null);
             }
             else {
@@ -435,7 +436,7 @@ function Speck(hidDeviceDescriptor) {
                   callback(null, isNoDataAvailable ? null : obj);
                }
                else {
-                  error("getDataSample(): no data in the response!");
+                  log.error("getDataSample(): no data in the response!");
                   callback(new Error("No data in the response"), null);
                }
             }
@@ -455,7 +456,7 @@ function Speck(hidDeviceDescriptor) {
          var command = createCommand(GET_SAMPLE_COUNT_COMMAND_CHARACTER);
          enqueueCommand(command, function(err, data) {
             if (err) {
-               error("getNumberOfAvailableSamples(): failed to get number of data samples: " + err);
+               log.error("getNumberOfAvailableSamples(): failed to get number of data samples: " + err);
                callback(err, null);
             }
             else {
@@ -468,7 +469,7 @@ function Speck(hidDeviceDescriptor) {
                   callback(null, obj);
                }
                else {
-                  error("getNumberOfAvailableSamples(): no data in the response!");
+                  log.error("getNumberOfAvailableSamples(): no data in the response!");
                   callback(null, null);
                }
             }
@@ -542,7 +543,7 @@ function Speck(hidDeviceDescriptor) {
             try {
 
                // BEGIN OLD
-               //debug("processCommandQueue: processing " + commandQueueItem.toString());
+               //log.debug("processCommandQueue: processing " + commandQueueItem.toString());
                //speck.write(commandQueueItem.command);
                // END OLD
 
@@ -553,7 +554,7 @@ function Speck(hidDeviceDescriptor) {
                // now attempt to read the response
                try {
                   // BEGIN NEW
-                  // debug("T=" + commandQueueItem.time + ": READ start (sendFeatureReportResponse=" + sendFeatureReportResponse + ")");
+                  // log.debug("T=" + commandQueueItem.time + ": READ start (sendFeatureReportResponse=" + sendFeatureReportResponse + ")");
                   var data = speck.getFeatureReport(REPORT_ID, COMMAND_LENGTH_IN_BYTES);
                   data = new Buffer(data);
                   if (data) {
@@ -577,7 +578,7 @@ function Speck(hidDeviceDescriptor) {
                   // BEGIN OLD
                   //speck.read(function(err, data) {
                   //   // TODO: verify checksum!
-                  //   debug("T=" + commandQueueItem.time + ": READ DONE: [" + data.toJSON().map(byteToZeroPaddedHexString) + "]");
+                  //   log.debug("T=" + commandQueueItem.time + ": READ DONE: [" + data.toJSON().map(byteToZeroPaddedHexString) + "]");
                   //   commandQueueItem.callback(err, data);
                   //
                   //   shiftQueueAndContinue();
@@ -585,14 +586,14 @@ function Speck(hidDeviceDescriptor) {
                   // END OLD
                }
                catch (readError) {
-                  error("processCommandQueue(): failed to read command response: " + readError);
+                  log.error("processCommandQueue(): failed to read command response: " + readError);
                   commandQueueItem.callback(readError, null);
 
                   shiftQueueAndContinue();
                }
             }
             catch (writeError) {
-               error("processCommandQueue(): failed to write command: " + writeError);
+               log.error("processCommandQueue(): failed to write command: " + writeError);
                commandQueueItem.callback(writeError, null);
 
                shiftQueueAndContinue();
@@ -613,7 +614,7 @@ function Speck(hidDeviceDescriptor) {
          }
       };
 
-      //debug("enqueueCommand: enqueuing " + commandQueueItem.toString());
+      //log.debug("enqueueCommand: enqueuing " + commandQueueItem.toString());
       commandQueue.push(commandQueueItem);
 
       // If this newly-added item is the only thing on the command queue, then go ahead and kick off processing.
@@ -678,7 +679,7 @@ Speck.create = function() {
          return new Speck(hidDeviceDescriptor);
       }
       catch (e) {
-         error("Speck.create(): failed to connect to speck at path [" + hidDeviceDescriptor.path + "] due to error:" + e);
+         log.error("Speck.create(): failed to connect to speck at path [" + hidDeviceDescriptor.path + "] due to error:" + e);
       }
    }
 
