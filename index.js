@@ -1,8 +1,6 @@
 var HID = require('node-hid');
 var ByteBuffer = require('byte');
-var log4js = require('log4js');
-log4js.configure('log4js-config.json');
-var log = log4js.getLogger("speck-sensor");
+var log = require('log4js').getLogger("speck-sensor");
 
 var SPECK_HID = {
    "vendorId" : 0x2354,
