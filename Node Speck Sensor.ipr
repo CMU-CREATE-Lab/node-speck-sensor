@@ -258,7 +258,6 @@
           <option name="ALIGN_MULTILINE_PARENTHESIZED_EXPRESSION" value="true" />
           <option name="ALIGN_MULTILINE_ARRAY_INITIALIZER_EXPRESSION" value="true" />
           <option name="SPACE_AFTER_TYPE_CAST" value="false" />
-          <option name="WRAP_COMMENTS" value="true" />
           <option name="IF_BRACE_FORCE" value="3" />
           <option name="DOWHILE_BRACE_FORCE" value="3" />
           <option name="WHILE_BRACE_FORCE" value="3" />
@@ -269,6 +268,10 @@
             <option name="CONTINUATION_INDENT_SIZE" value="6" />
             <option name="TAB_SIZE" value="3" />
           </indentOptions>
+        </codeStyleSettings>
+        <codeStyleSettings language="JSON">
+          <option name="KEEP_BLANK_LINES_IN_CODE" value="1" />
+          <option name="PARENT_SETTINGS_INSTALLED" value="true" />
         </codeStyleSettings>
         <codeStyleSettings language="JSP">
           <indentOptions>
@@ -410,4 +413,3 @@
     </library>
   </component>
 </project>
-
