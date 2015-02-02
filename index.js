@@ -69,6 +69,7 @@ function Speck(hidDeviceDescriptor) {
    var GET_HISTORIC_SAMPLE_COMMAND_CHARACTER = "G";
    var GET_CURRENT_SAMPLE_COMMAND_CHARACTER = "S";
    var GET_SAMPLE_COUNT_COMMAND_CHARACTER = "P";
+   var SET_LOGGING_INTERVAL_COMMAND_CHARACTER = "I";
 
    var REPORT_ID = 1;
    var COMMAND_LENGTH_IN_BYTES = 16;
@@ -98,7 +99,12 @@ function Speck(hidDeviceDescriptor) {
    var HUMIDITY_BYTE_INDEX = 11;
    var RAW_PARTICLE_COUNT_BYTE_INDEX = 12;
 
+   // Byte indices for Set Logging Interval command
+   var LOGGING_INTERVAL_BYTE_INDEX_WHEN_WRITING = 5;
+
    var DEFAULT_LOGGING_INTERVAL = 1;
+   var MIN_LOGGING_INTERVAL = 1;
+   var MAX_LOGGING_INTERVAL = 255;
 
    if (!isSpeck(hidDeviceDescriptor)) {
       throw new Error("The given hidDeviceDescriptor does not represent a Speck!");
@@ -158,6 +164,7 @@ function Speck(hidDeviceDescriptor) {
          }
          finally {
             speck = null;
+            speckConfig = null;
          }
       }
    };
@@ -191,36 +198,40 @@ function Speck(hidDeviceDescriptor) {
     * @param callback {function} - the callback function with a signature of the form <code>callback(err, data)</code>
     */
    this.getSpeckConfig = function(callback) {
-      if (speckConfig) {
-         log.debug("getSpeckConfig(): returning copy of cached version");
-         return callback(null, simpleObjectCopy(speckConfig));
-      }
-      else {
-         log.debug("getSpeckConfig(): querying hardware for speck config");
-         getBasicSpeckConfig(function(err, config) {
-            if (err) {
-               return callback(err, null);
-            }
-
-            speckConfig = config;
-
-            if (speckConfig.protocolVersion < 3) {
-               return callback(null, simpleObjectCopy(speckConfig));
-            }
-
-            log.debug("getSpeckConfig(): need to get extended Speck config");
-            getExtendedSpeckConfig(function(err2, extendedConfig) {
-               if (err2) {
-                  return callback(err2, null);
+      if (typeof callback === 'function') {
+         if (speckConfig) {
+            log.debug("getSpeckConfig(): returning copy of cached version");
+            return callback(null, simpleObjectCopy(speckConfig));
+         }
+         else {
+            log.debug("getSpeckConfig(): querying hardware for speck config");
+            getBasicSpeckConfig(function(err, config) {
+               if (err) {
+                  return callback(err, null);
                }
 
-               log.debug("getSpeckConfig(): id was [" + speckConfig.id + "]");
-               speckConfig.id = speckConfig.id + extendedConfig.id;
-               log.debug("getSpeckConfig(): id is now [" + speckConfig.id + "]");
+               speckConfig = config;
 
-               callback(null, simpleObjectCopy(speckConfig));
-            });
-         })
+               if (speckConfig.protocolVersion < 3) {
+                  return callback(null, simpleObjectCopy(speckConfig));
+               }
+
+               log.debug("getSpeckConfig(): need to get extended Speck config");
+               getExtendedSpeckConfig(function(err2, extendedConfig) {
+                  if (err2) {
+                     return callback(err2, null);
+                  }
+
+                  log.debug("getSpeckConfig(): id was [" + speckConfig.id + "]");
+                  speckConfig.id = speckConfig.id + extendedConfig.id;
+                  log.debug("getSpeckConfig(): id is now [" + speckConfig.id + "]");
+
+                  callback(null, simpleObjectCopy(speckConfig));
+               });
+            })
+         }
+      } else {
+         log.error("Given callback [" + callback + "] is not a function")
       }
    };
 
@@ -492,12 +503,50 @@ function Speck(hidDeviceDescriptor) {
       // TODO: implement me!
    };
 
+   /**
+    * Sets the logging interval, if supported by the Speck's firmware. The given
+    * <code>loggingIntervalInSeconds</code> is clamped to ensure it's within the valid range.
+    *
+    * @param {int} loggingIntervalInSeconds
+    * @param callback
+    */
    this.setLoggingInterval = function(loggingIntervalInSeconds, callback) {
       if (self.isConnected()) {
-         if (!self.getApiSupport().canMutateLoggingInterval()) {
+         if (self.getApiSupport().canMutateLoggingInterval()) {
+            // make sure the range is valid
+            loggingIntervalInSeconds = Math.min(Math.max(loggingIntervalInSeconds, MIN_LOGGING_INTERVAL), MAX_LOGGING_INTERVAL);
+
+            var command = createCommand(SET_LOGGING_INTERVAL_COMMAND_CHARACTER);
+            command[LOGGING_INTERVAL_BYTE_INDEX_WHEN_WRITING] = loggingIntervalInSeconds;
+            enqueueCommand(command, function(err, data) {
+               if (err) {
+                  console.log("ERROR: setLoggingInterval(): failed to write logging interval: " + err);
+                  callback(err, null);
+               }
+               else {
+                  if (data) {
+                     // read the value returned from the Speck and make sure it matches the value we asked for
+                     var actualLoggingInterval = data.readUInt8(LOGGING_INTERVAL_BYTE_INDEX_WHEN_READING);
+                     var wasSuccessful = loggingIntervalInSeconds == actualLoggingInterval;
+                     if (wasSuccessful) {
+                        // remember this new logging interval
+                        speckConfig.loggingIntervalSecs = actualLoggingInterval;
+                     }
+                     else {
+                        console.log("ERROR: Failed to set logging interval. Expected [" + loggingIntervalInSeconds + "], but received [" + actualLoggingInterval + "]");
+                     }
+                     callback(null, wasSuccessful);
+                  }
+                  else {
+                     console.log("ERROR: setLoggingInterval(): no data in the response!");
+                     callback(null, false);
+                  }
+               }
+            });
+         }
+         else {
             return callback(new Error("The logging interval for this Speck cannot be modified."), null);
          }
-         // TODO: implement me!
       }
       else {
          callback(new Error("Not connected to a Speck!"), null);

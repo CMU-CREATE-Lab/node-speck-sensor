@@ -131,6 +131,71 @@ describe('Speck.create()', function() {
          });
       });
    });
+   describe('setLoggingInterval()', function() {
+      var currentLoggingInterval = null;
+      var desiredLoggingInterval = null;
+      before(function(initDone) {
+         speck.getSpeckConfig(function(err, config) {
+            if (err) {
+               return initDone(err);
+            }
+            currentLoggingInterval = config.loggingIntervalSecs;
+            desiredLoggingInterval = (currentLoggingInterval == 10) ? 60 : 10;
+            initDone();
+         });
+      });
+
+      var setAndCheckLoggingInterval = function(desiredLoggingInterval, callback){
+         speck.setLoggingInterval(desiredLoggingInterval, function(err, wasSuccessful) {
+            expect(err).to.be.null;
+            expect(wasSuccessful).to.be.true;
+
+            speck.getSpeckConfig(function(err, config1) {
+               if (err) {
+                  return callback(err);
+               }
+
+               if (config1.loggingIntervalSecs == desiredLoggingInterval) {
+                  // now disconnect, then reconnect and re-read the speck config
+                  speck.disconnect();
+                  speck.connect();
+
+                  speck.getSpeckConfig(function(err, config2) {
+                     if (err) {
+                        return callback(err);
+                     }
+
+                     if (config2.loggingIntervalSecs == desiredLoggingInterval) {
+                        callback(null, true);
+                     } else {
+                        callback(new Error("Incorrect logging interval: expected [" + desiredLoggingInterval + "], got [" + config2.loggingIntervalSecs + "]"));
+                     }
+                  });
+               } else {
+                  callback(new Error("Incorrect logging interval: expected [" + desiredLoggingInterval + "], got [" + config1.loggingIntervalSecs + "]"));
+               }
+            });
+         });
+      };
+
+      it('should be able to set the logging interval', function(done) {
+         console.log("Current logging interval is [" + currentLoggingInterval + "], will change it to [" + desiredLoggingInterval + "]");
+         setAndCheckLoggingInterval(desiredLoggingInterval, function(err, wasSuccessful){
+            expect(err).to.be.null;
+            expect(wasSuccessful).to.be.true;
+            done();
+         });
+      });
+
+      it('should be able to set the logging interval back to what it was before the testing', function(done) {
+         console.log("Reverting the logging interval back to [" + currentLoggingInterval + "]");
+         setAndCheckLoggingInterval(currentLoggingInterval, function(err, wasSuccessful){
+            expect(err).to.be.null;
+            expect(wasSuccessful).to.be.true;
+            done();
+         });
+      });
+   });
    describe('speck.disconnect()', function() {
       it("should disconnect from the Speck hardware", function() {
          speck.disconnect();
