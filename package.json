@@ -1,6 +1,6 @@
 {
   "name": "speck-sensor",
-  "version": "0.1.4",
+  "version": "0.2.0",
   "description": "Node.js interface for the CMU CREATE Lab Speck particle sensor",
   "main": "index.js",
   "scripts": {
