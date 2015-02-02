@@ -32,6 +32,13 @@ var isSpeck = function(hidDeviceDescriptor) {
    return true;
 };
 
+// Returns a random integer between min (included) and max (excluded)
+// Using Math.round() will give you a non-uniform distribution!
+// Got this from: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Math/random
+var getRandomInt = function(min, max) {
+   return Math.floor(Math.random() * (max - min)) + min;
+};
+
 //======================================================================================================================
 // CLASS DEFINITION
 //======================================================================================================================
@@ -66,8 +73,11 @@ function Speck(hidDeviceDescriptor) {
    var REPORT_ID = 1;
    var COMMAND_LENGTH_IN_BYTES = 16;
 
-   // Array index of the data byte array containing the checksum byte
-   var CHECKSUM_BYTE_INDEX = 14;
+   // Array index in the data byte array containing the checksum byte
+   var CHECKSUM_BYTE_INDEX = COMMAND_LENGTH_IN_BYTES - 2;
+
+   // Array index in the data byte array containing the command ID byte
+   var COMMAND_ID_BYTE_INDEX = COMMAND_LENGTH_IN_BYTES - 1;
 
    // Byte indices for Info command
    var SERIAL_NUMBER_STARTING_BYTE_INDEX = 1;
@@ -97,7 +107,7 @@ function Speck(hidDeviceDescriptor) {
    var self = this;
    var speck = null;
    var speckConfig = null;
-   var commandId = 1;
+   var commandId = getRandomInt(1, 256);  // start with a random command ID in the range [1,255]
 
    var commandQueue = [];
 
@@ -506,11 +516,8 @@ function Speck(hidDeviceDescriptor) {
       byteBuffer.putChar(commandCharacter);                                   // the command character
       byteBuffer.putInt(Math.round(new Date().getTime() / 1000));             // current time in seconds
 
-      var command = byteBufferToArray(byteBuffer, COMMAND_LENGTH_IN_BYTES);   // convert to an array
-      command[CHECKSUM_BYTE_INDEX] = computeChecksum(command);       // insert the checksum
-
-      return command;
-
+      // convert to an array and return
+      return byteBufferToArray(byteBuffer, COMMAND_LENGTH_IN_BYTES);
    };
 
    var computeChecksum = function(command) {
@@ -600,7 +607,10 @@ function Speck(hidDeviceDescriptor) {
       };
 
       // commands need incrementing command IDs
-      command[COMMAND_LENGTH_IN_BYTES - 1] = getNextCommandId();
+      command[COMMAND_ID_BYTE_INDEX] = getNextCommandId();
+
+      // insert checksum
+      command[CHECKSUM_BYTE_INDEX] = computeChecksum(command);       // insert the checksum
 
       var commandQueueItem = {
          command : command,
