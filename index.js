@@ -596,19 +596,10 @@ function Speck(hidDeviceDescriptor) {
             // attempt to write the command
             try {
 
-               // BEGIN OLD
-               //log.debug("processCommandQueue: processing " + commandQueueItem.toString());
-               //speck.write(commandQueueItem.command);
-               // END OLD
-
-               // BEGIN NEW
                speck.sendFeatureReport(commandQueueItem.command);
-               // END NEW
 
                // now attempt to read the response
                try {
-                  // BEGIN NEW
-                  // log.debug("T=" + commandQueueItem.time + ": READ start (sendFeatureReportResponse=" + sendFeatureReportResponse + ")");
                   var data = speck.getFeatureReport(REPORT_ID, COMMAND_LENGTH_IN_BYTES);
                   data = new Buffer(data);
                   if (data) {
@@ -627,17 +618,6 @@ function Speck(hidDeviceDescriptor) {
                      commandQueueItem.callback(new Error("Failed to read response: no data"), null);
                   }
                   shiftQueueAndContinue();
-                  // END NEW
-
-                  // BEGIN OLD
-                  //speck.read(function(err, data) {
-                  //   // TODO: verify checksum!
-                  //   log.debug("T=" + commandQueueItem.time + ": READ DONE: [" + data.toJSON().map(byteToZeroPaddedHexString) + "]");
-                  //   commandQueueItem.callback(err, data);
-                  //
-                  //   shiftQueueAndContinue();
-                  //});
-                  // END OLD
                }
                catch (readError) {
                   log.error("processCommandQueue(): failed to read command response: " + readError);
