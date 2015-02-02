@@ -230,7 +230,8 @@ function Speck(hidDeviceDescriptor) {
                });
             })
          }
-      } else {
+      }
+      else {
          log.error("Given callback [" + callback + "] is not a function")
       }
    };
@@ -601,15 +602,23 @@ function Speck(hidDeviceDescriptor) {
                   var data = speck.getFeatureReport(REPORT_ID, COMMAND_LENGTH_IN_BYTES);
                   data = new Buffer(data);
                   if (data) {
-                     // verify checksum
+                     // verify command ID and checksum
                      var responseData = data.toJSON();
-                     var expectedChecksum = computeChecksum(responseData);
-                     var actualChecksum = responseData[CHECKSUM_BYTE_INDEX];
-                     if (expectedChecksum == actualChecksum) {
-                        commandQueueItem.callback(null, data);
+
+                     var expectedCommandId = commandQueueItem.command[COMMAND_ID_BYTE_INDEX];
+                     var actualCommandId = responseData[COMMAND_ID_BYTE_INDEX];
+                     if (expectedCommandId == actualCommandId) {
+                        var expectedChecksum = computeChecksum(responseData);
+                        var actualChecksum = responseData[CHECKSUM_BYTE_INDEX];
+                        if (expectedChecksum == actualChecksum) {
+                           commandQueueItem.callback(null, data);
+                        }
+                        else {
+                           commandQueueItem.callback(new Error("Failed to read response: invalid checksum.  Expected [" + expectedChecksum + "] actual [" + actualChecksum + "]"), null);
+                        }
                      }
                      else {
-                        commandQueueItem.callback(new Error("Failed to read response: invalid checksum"), null);
+                        commandQueueItem.callback(new Error("Failed to read response: invalid command ID.  Expected [" + expectedCommandId + "] actual [" + actualCommandId + "]"), null);
                      }
                   }
                   else {
