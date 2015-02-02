@@ -20,13 +20,13 @@
   "license": "GPL-2.0",
   "dependencies": {
     "byte": "^1.1.1",
-    "jsdoc": "^3.3.0-alpha10",
-    "log4js": "^0.6.21",
+    "jsdoc": "^3.3.0-beta1",
+    "log4js": "^0.6.22",
     "node-hid": "^0.3.2"
   },
   "devDependencies": {
     "chai": "^1.9.2",
-    "mocha": "^2.0.1"
+    "mocha": "^2.1.0"
   },
   "directories": {
     "test": "test"
