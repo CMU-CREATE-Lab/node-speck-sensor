@@ -430,10 +430,8 @@ function Speck(hidDeviceDescriptor) {
                      rawParticleCount : data.readUInt16BE(RAW_PARTICLE_COUNT_BYTE_INDEX)
                   };
 
-                  // see whether any data was actually returned
-                  var isNoDataAvailable = obj.sampleTimeSecs == 0 &&
-                                          obj.rawParticleCount == 0 &&
-                                          obj.humidity == 0;
+                  // see whether any data was actually returned (timestamp should never be 0)
+                  var isNoDataAvailable = obj.sampleTimeSecs == 0;
 
                   if (!isNoDataAvailable) {
                      // temperature was only included in protocol version 1
