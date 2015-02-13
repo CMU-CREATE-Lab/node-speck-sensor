@@ -437,7 +437,7 @@ function Speck(hidDeviceDescriptor) {
                   if (!isNoDataAvailable) {
                      // temperature was only included in protocol version 1
                      if (self.getApiSupport().hasTemperatureSensor()) {
-                        obj['temperature'] = data.readUInt16BE(TEMPERATURE_BYTE_INDEX);
+                        obj['temperature'] = data.readInt16BE(TEMPERATURE_BYTE_INDEX);
                      }
 
                      // add the particleCount or particleConcentration field, depending on the protocol version.
