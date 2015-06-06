@@ -16,7 +16,7 @@ Do the following if you want to run this module's tests:
         
    You must have a Speck plugged in in order for the tests to pass!
 
-Linux/Raspberry Pi users will need to copy the `etc/linux/55-speck.rules` file to `/etc/udev/rules.d/` and then reboot.
+Linux/Raspberry Pi users will need to copy the `etc/linux/55-speck.rules` file to `/etc/udev/rules.d/` and then reboot. Also, Linux/Raspberry Pi users will probably need to run as root or with sudo privileges.
 
 Usage
 =====
